@@ -28,6 +28,8 @@ class bentomanga : ParsedHttpSource() {
 
     override val name = "bentomanga"
 
+    override val id: Long = 4697148576707003393
+
     override val baseUrl = "https://www.bentomanga.com"
 
     override val lang = "fr"
