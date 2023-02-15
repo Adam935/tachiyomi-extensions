@@ -24,9 +24,9 @@ import rx.Observable
 import uy.kohesive.injekt.injectLazy
 import java.util.Calendar
 
-class Japanread : ParsedHttpSource() {
+class bentomanga : ParsedHttpSource() {
 
-    override val name = "Japanread"
+    override val name = "bentomanga"
 
     override val baseUrl = "https://www.bentomanga.com"
 
@@ -223,11 +223,11 @@ class Japanread : ParsedHttpSource() {
         val document = response.asJsoup()
         val mangaId = document.select("div[data-avg]").attr("data-avg")
 
-        client.newCall(GET(baseUrl + document.select("#chapters div[data-row=chapter]").first().select("div.col-lg-5 a").attr("href"), headers)).execute()
+        client.newCall(GET(baseUrl + document.select("#chapters div[data-row=chapter]").first()!!.select("div.col-lg-5 a").attr("href"), headers)).execute()
 
         val apiResponse = client.newCall(GET("$baseUrl/api/?id=$mangaId&type=manga", apiHeaders())).execute()
 
-        val jsonData = apiResponse.body!!.string()
+        val jsonData = apiResponse.body.string()
         val json = JsonParser().parse(jsonData).asJsonObject
 
         return json["chapter"].obj.entrySet()
@@ -253,7 +253,7 @@ class Japanread : ParsedHttpSource() {
         val apiRequest = GET("$baseUrl/api/?id=$chapterId&type=chapter", apiHeaders(document.location()))
         val apiResponse = client.newCall(apiRequest).execute()
 
-        val jsonResult = json.parseToJsonElement(apiResponse.body!!.string()).jsonObject
+        val jsonResult = json.parseToJsonElement(apiResponse.body.string()).jsonObject
 
         val baseImagesUrl = jsonResult["baseImagesUrl"]!!.jsonPrimitive.content
 
@@ -386,66 +386,7 @@ class Japanread : ParsedHttpSource() {
             }
         }
     }
-    /**
-     * Represents a filter that is allow multi select genre.
-     */
-    /*
-    private class Genre(val key: String, title: String) : Filter.TriState(title) {
-        override fun toString(): String {
-            return name
-        }
-    }
-    private open class GenreList(
-        displayName: String,
-        val uriParam: String,
-        genres: Array<Genre>)
-        : Filter.Select<Genre>("Genres", genres, 0)
 
-    private class genres : GenreList(
-        "Genre",
-        "withCategories",
-        arrayOf(
-            Genre("0", "Tous"),
-            Genre("1", "Action"),
-            Genre("27", "Adulte"),
-            Genre("20", "Amitié"),
-            Genre("21", "Amour"),
-            Genre("7", "Arts martiaux"),
-            Genre("3", "Aventure"),
-            Genre("6", "Combat"),
-            Genre("5", "Comédie"),
-            Genre("4", "Drame"),
-            Genre("12", "Ecchi"),
-            Genre("16", "Fantastique"),
-            Genre("29", "Gender Bender"),
-            Genre("8", "Guerre"),
-            Genre("22", "Harem"),
-            Genre("23", "Hentai"),
-            Genre("15", "Historique"),
-            Genre("19", "Horreur"),
-            Genre("13", "Josei"),
-            Genre("30", "Mature"),
-            Genre("18", "Mecha"),
-            Genre("32", "One-shot"),
-            Genre("42", "Parodie"),
-            Genre("17", "Policier"),
-            Genre("25", "Science-fiction"),
-            Genre("31", "Seinen"),
-            Genre("10", "Shojo"),
-            Genre("26", "Shojo Ai"),
-            Genre("2", "Shonen"),
-            Genre("35", "Shonen Ai"),
-            Genre("37", "Smut"),
-            Genre("14", "Sports"),
-            Genre("38", "Surnaturel"),
-            Genre("39", "Tragédie"),
-            Genre("36", "Tranches de vie"),
-            Genre("34", "Vie scolaire"),
-            Genre("24", "Yaoi"),
-            Genre("41", "Yuri"),
-        ),
-    )
-     */
     /**
      * Represents a filter that is able to modify a URI.
      */
