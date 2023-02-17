@@ -24,7 +24,7 @@ import rx.Observable
 import uy.kohesive.injekt.injectLazy
 import java.util.Calendar
 
-class bentomanga : ParsedHttpSource() {
+class BentoManga : ParsedHttpSource() {
 
     override val name = "bentomanga"
 
