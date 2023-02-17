@@ -5,7 +5,7 @@ apply plugin: 'kotlinx-serialization'
 ext {
     extName = 'Bento Manga'
     pkgNameSuffix = 'fr.japanread'
-    extClass = '.bentomanga'
+    extClass = '.BentoManga'
     extVersionCode = 11
     isNsfw = true
 }
