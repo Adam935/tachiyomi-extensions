@@ -26,7 +26,7 @@ import java.util.Calendar
 
 class BentoManga : ParsedHttpSource() {
 
-    override val name = "bentomanga"
+    override val name = "Bento Manga"
 
     override val id: Long = 4697148576707003393
 
