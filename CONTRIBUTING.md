@@ -392,6 +392,7 @@ open class UriPartFilter(displayName: String, private val vals: Array<Pair<Strin
 - If the source provides all the `Page.imageUrl`'s directly, you can fill them and let the `Page.url` empty, so the app will skip the `fetchImageUrl` source and call directly `fetchImage`.
 - The `Page.url` and `Page.imageUrl` attributes **should be set as an absolute URL**.
 - Chapter pages numbers start from `0`.
+- The list of `Page`s should be returned already sorted, the `index` field is ignored.
 
 ### Misc notes
 
@@ -507,6 +508,11 @@ multisrc
 - `multisrc/overrides/<themepkg>/<sourcepkg>/res` contains override for icons.
 - `multisrc/overrides/<themepkg>/<sourcepkg>/additional.gradle` defines additional gradle code, this will be copied at the end of the generated gradle file below the theme's `additional.gradle`.
 - `multisrc/overrides/<themepkg>/<sourcepkg>/AndroidManifest.xml` is copied as an override to the default `AndroidManifest.xml` generation if it exists.
+
+> **Note**
+>
+> Files ending with `Gen.kt` (i.e. `multisrc/src/main/java/eu/kanade/tachiyomi/multisrc/<theme>/XxxGen.kt`)
+> are considered helper files and won't be copied to generated sources.
 
 ### Development workflow
 There are three steps in running and testing a theme source:

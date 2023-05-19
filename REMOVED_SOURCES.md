@@ -9,6 +9,7 @@
 - Hitomi.la https://github.com/tachiyomiorg/tachiyomi-extensions/pull/11613
 - HQ Dragon https://github.com/tachiyomiorg/tachiyomi-extensions/pull/7065
 - Koushoku https://github.com/tachiyomiorg/tachiyomi-extensions/pull/13329
+- LeerCapitulo https://github.com/tachiyomiorg/tachiyomi-extensions/pull/16255
 - Mangá Host https://github.com/tachiyomiorg/tachiyomi-extensions/pull/7065
 - Mangá Livre and Leitor.net https://github.com/tachiyomiorg/tachiyomi-extensions/pull/8679
 - MangaDig https://github.com/tachiyomiorg/tachiyomi-extensions/pull/14974
@@ -43,6 +44,7 @@
 - MHScans https://github.com/tachiyomiorg/tachiyomi-extensions/issues/15319
 - NarTag https://github.com/tachiyomiorg/tachiyomi-extensions/issues/8038
 - Plot-twistnf-scans https://github.com/tachiyomiorg/tachiyomi-extensions/issues/4242
+- Realm Scans https://github.com/tachiyomiorg/tachiyomi-extensions/issues/15586
 - Reset Scans https://github.com/tachiyomiorg/tachiyomi-extensions/issues/13168
 - SetsuScans https://github.com/tachiyomiorg/tachiyomi-extensions/issues/11040
 - ShinobiScans https://github.com/tachiyomiorg/tachiyomi-extensions/issues/14457
