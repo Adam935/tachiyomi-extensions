@@ -44,7 +44,7 @@ abstract class ComickFun(override val lang: String, private val comickFunLang: S
         add("User-Agent", "Tachiyomi ${System.getProperty("http.agent")}")
     }
 
-    override val client: OkHttpClient = network.client.newBuilder().rateLimit(4, 1).build()
+    override val client: OkHttpClient = network.client.newBuilder().build()
 
     /** Popular Manga **/
     override fun popularMangaRequest(page: Int): Request {

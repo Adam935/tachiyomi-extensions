@@ -29,14 +29,13 @@ class MangaKawaii : ParsedHttpSource() {
 
     override val name = "Mangakawaii"
     override val baseUrl = "https://www.mangakawaii.io"
-    private val cdnUrl = "https://cdn.mangakawaii.pics"
+    private val cdnUrl = "https://cdn.mangakawaii.io"
     override val lang = "fr"
     override val supportsLatest = true
 
     override val client: OkHttpClient = network.cloudflareClient.newBuilder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
-        .rateLimit(2)
         .build()
 
     private val userAgentRandomizer1 = "${Random.nextInt(9).absoluteValue}"
