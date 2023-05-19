@@ -41,7 +41,7 @@ class BentoManga : ParsedHttpSource() {
     private val json: Json by injectLazy()
 
     override val client: OkHttpClient = network.cloudflareClient.newBuilder()
-        .connectTimeout(10, TimeUnit.SECONDS)
+        .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .rateLimit(2,2)
         .build()
