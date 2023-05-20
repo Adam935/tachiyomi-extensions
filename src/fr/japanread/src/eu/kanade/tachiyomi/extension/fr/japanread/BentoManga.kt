@@ -43,7 +43,7 @@ class BentoManga : ParsedHttpSource() {
     override val client: OkHttpClient = network.cloudflareClient.newBuilder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
-        .rateLimit(3,1)
+        .rateLimit(2,1)
         .build()
 
     override fun headersBuilder(): Headers.Builder = Headers.Builder()
