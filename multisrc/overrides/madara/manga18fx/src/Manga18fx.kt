@@ -30,7 +30,6 @@ class Manga18fx : Madara(
 
     override val fetchGenres = false
     override val sendViewCount = false
-    override val useLoadMoreSearch = false
 
     override fun popularMangaRequest(page: Int) = GET(baseUrl, headers)
 
@@ -56,7 +55,7 @@ class Manga18fx : Madara(
         val mangas = document.select(Evaluator.Class("bsx-item")).map {
             mangaFromElement(it.selectFirst(Evaluator.Tag("a"))!!)
         }
-        val nextButton = document.selectFirst(Evaluator.Class("next"))!!
+        val nextButton = document.selectFirst(Evaluator.Class("next"))
         val hasNextPage = nextButton != null && nextButton.hasClass("disabled").not()
         return MangasPage(mangas, hasNextPage)
     }
@@ -82,7 +81,7 @@ class Manga18fx : Madara(
             .addQueryParameter("page", page.toString())
             .build()
 
-        return Request.Builder().url(url).headers(headers).build()
+        return GET(url, headers)
     }
 
     override fun searchMangaParse(response: Response) = latestUpdatesParse(response)

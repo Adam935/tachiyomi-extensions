@@ -77,8 +77,8 @@ abstract class LibGroup(
         }
     }
     override val client: OkHttpClient = network.cloudflareClient.newBuilder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(1, TimeUnit.MINUTES)
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
         .rateLimit(2)
         .addInterceptor { chain ->
             val response = chain.proceed(chain.request())
@@ -129,7 +129,7 @@ abstract class LibGroup(
     }
 
     private fun fetchLatestMangaFromApi(page: Int): Observable<MangasPage> {
-        return client.newCall(POST("$baseUrl/filterlist?dir=desc&sort=last_chapter_at&page=$page", catalogHeaders()))
+        return client.newCall(POST("$baseUrl/filterlist?dir=desc&sort=last_chapter_at&page=$page&chapters[min]=1", catalogHeaders()))
             .asObservableSuccess()
             .map { response ->
                 latestUpdatesParse(response)
@@ -140,7 +140,7 @@ abstract class LibGroup(
         popularMangaParse(response)
 
     // Popular
-    override fun popularMangaRequest(page: Int) = GET(baseUrl, headers)
+    override fun popularMangaRequest(page: Int) = GET("$baseUrl/?section=home-updates", headers)
     override fun fetchPopularManga(page: Int): Observable<MangasPage> {
         if (csrfToken.isEmpty()) {
             return client.newCall(popularMangaRequest(page))
@@ -156,7 +156,7 @@ abstract class LibGroup(
     }
 
     private fun fetchPopularMangaFromApi(page: Int): Observable<MangasPage> {
-        return client.newCall(POST("$baseUrl/filterlist?dir=desc&sort=views&page=$page", catalogHeaders()))
+        return client.newCall(POST("$baseUrl/filterlist?dir=desc&sort=views&page=$page&chapters[min]=1", catalogHeaders()))
             .asObservableSuccess()
             .map { response ->
                 popularMangaParse(response)
@@ -217,7 +217,7 @@ abstract class LibGroup(
 
         val rawAgeStop = document.select(".media-short-info .media-short-info__item[data-caution]").text()
 
-        val ratingValue = document.select(".media-rating__value").last()!!.text().toFloat() * 2
+        val ratingValue = document.select(".media-rating__value").last()!!.text().toFloat()
         val ratingVotes = document.select(".media-rating__votes").last()!!.text()
         val ratingStar = when {
             ratingValue > 9.5 -> "★★★★★"
@@ -489,7 +489,7 @@ abstract class LibGroup(
     }
 
     private fun checkImage(url: String): Boolean {
-        val response = client.newCall(Request.Builder().url(url).head().headers(headers).build()).execute()
+        val response = client.newCall(Request.Builder().url(url).headers(headers).build()).execute()
         return response.isSuccessful && (response.header("content-length", "0")?.toInt()!! > 600)
     }
 
@@ -539,7 +539,7 @@ abstract class LibGroup(
             val resBody = tokenResponse.body.string()
             csrfToken = "_token\" content=\"(.*)\"".toRegex().find(resBody)!!.groups[1]!!.value
         }
-        val url = "$baseUrl/filterlist?page=$page".toHttpUrlOrNull()!!.newBuilder()
+        val url = "$baseUrl/filterlist?page=$page&chapters[min]=1".toHttpUrlOrNull()!!.newBuilder()
         if (query.isNotEmpty()) {
             url.addQueryParameter("name", query)
         }
@@ -579,6 +579,11 @@ abstract class LibGroup(
                         url.addQueryParameter(if (favorite.isIncluded()) "bookmarks[include][]" else "bookmarks[exclude][]", favorite.id)
                     }
                 }
+                is RequireChapters -> {
+                    if (filter.state == 1) {
+                        url.setQueryParameter("chapters[min]", "0")
+                    }
+                }
                 else -> {}
             }
         }
@@ -606,6 +611,7 @@ abstract class LibGroup(
         StatusList(getStatusList()),
         StatusTitleList(getStatusTitleList()),
         MyList(getMyList()),
+        RequireChapters(),
     )
 
     private class OrderBy : Filter.Sort(
@@ -701,6 +707,12 @@ abstract class LibGroup(
         SearchFilter("Прочитано", "4"),
         SearchFilter("Любимые", "5"),
     )
+
+    private class RequireChapters : Filter.Select<String>(
+        "Только проекты с главами",
+        arrayOf("Да", "Все"),
+    )
+
     companion object {
         const val PREFIX_SLUG_SEARCH = "slug:"
         private const val SERVER_PREF = "MangaLibImageServer"

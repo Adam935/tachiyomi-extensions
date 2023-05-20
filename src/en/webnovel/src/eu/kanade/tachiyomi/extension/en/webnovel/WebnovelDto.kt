@@ -41,7 +41,14 @@ data class ComicDetailInfoDto(
     val authorName: String,
     val categoryName: String,
     val description: String,
-)
+    val updateCycle: String,
+) {
+    companion object {
+        const val ONGOING = 1
+        const val COMPLETED = 2
+        const val ON_HIATUS = 3
+    }
+}
 
 @Serializable
 data class ComicChapterListDto(
@@ -59,4 +66,21 @@ data class ComicChapterDto(
     val isAuth: Int,
     val chapterLevel: Int,
     val userLevel: Int,
+)
+
+@Serializable
+data class ChapterContentResponseDto(
+    @SerialName("chapterInfo") val chapterContent: ChapterContentDto,
+)
+
+@Serializable
+data class ChapterContentDto(
+    @SerialName("chapterId") val id: Long,
+    @SerialName("chapterPage") val pages: List<ChapterPageDto>,
+)
+
+@Serializable
+data class ChapterPageDto(
+    @SerialName("pageId") val id: String,
+    val url: String,
 )

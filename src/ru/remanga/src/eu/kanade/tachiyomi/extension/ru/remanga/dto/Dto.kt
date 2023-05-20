@@ -64,7 +64,7 @@ data class MangaDetDto(
 
 @Serializable
 data class PropsDto(
-    val total_pages: Int,
+    val total_pages: Int? = 0,
     val page: Int,
 )
 
@@ -97,6 +97,18 @@ data class BookDto(
 )
 
 @Serializable
+data class SeriesExWrapperDto<T>(
+    val data: T,
+)
+
+@Serializable
+data class ExBookDto(
+    val id: Long,
+    val tome: Int,
+    val chapter: String,
+)
+
+@Serializable
 data class PagesDto(
     val id: Int,
     val height: Int,
@@ -117,5 +129,4 @@ data class ChunksPageDto(
 @Serializable
 data class UserDto(
     val id: Long,
-    val access_token: String? = null,
 )

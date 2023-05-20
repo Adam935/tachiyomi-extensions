@@ -31,13 +31,19 @@ data class ZeistMangaFeedDto(
 data class ZeistMangaEntryDto(
     val title: ZeistMangaEntryTitleDto? = null,
     val published: ZeistMangaEntryPublishedDto? = null,
+    val category: List<ZeistMangaEntryCategory>? = emptyList(),
     @SerialName("link") val url: List<ZeistMangaEntryLink>? = emptyList(),
     val content: ZeistMangaEntryContentDto? = null,
+    @SerialName("media\$thumbnail") val thumbnail: ZeistMangaEntryThumbnail? = null,
 ) {
     fun toSManga(baseurl: String): SManga = SManga.create().apply {
         title = this@ZeistMangaEntryDto.title!!.t
         url = getChapterLink(this@ZeistMangaEntryDto.url!!).substringAfter(baseurl)
-        thumbnail_url = getThumbnail(this@ZeistMangaEntryDto.content!!)
+        thumbnail_url = if (this@ZeistMangaEntryDto.thumbnail == null) {
+            getThumbnailFromContent(this@ZeistMangaEntryDto.content!!)
+        } else {
+            getThumbnail(this@ZeistMangaEntryDto.thumbnail)
+        }
     }
 
     fun toSChapter(baseurl: String): SChapter = SChapter.create().apply {
@@ -51,7 +57,12 @@ data class ZeistMangaEntryDto(
         return list.first { it.rel == "alternate" }.href
     }
 
-    private fun getThumbnail(html: ZeistMangaEntryContentDto): String {
+    private fun getThumbnail(thumbnail: ZeistMangaEntryThumbnail): String {
+        return thumbnail.url.replace("""\/s.+?-c\/""".toRegex(), "/w600/")
+            .replace("""=s(?!.*=s).+?-c$""".toRegex(), "=w600")
+    }
+
+    private fun getThumbnailFromContent(html: ZeistMangaEntryContentDto): String {
         val document = Jsoup.parse(html.t)
         return document.selectFirst("img")!!.attr("src")
     }
@@ -76,4 +87,14 @@ data class ZeistMangaEntryContentDto(
 data class ZeistMangaEntryLink(
     val rel: String,
     val href: String,
+)
+
+@Serializable
+data class ZeistMangaEntryCategory(
+    val term: String,
+)
+
+@Serializable
+data class ZeistMangaEntryThumbnail(
+    val url: String,
 )

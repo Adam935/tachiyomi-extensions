@@ -114,6 +114,15 @@ class VizShonenJump : ParsedHttpSource() {
     override fun latestUpdatesNextPageSelector(): String? = null
 
     override fun fetchSearchManga(page: Int, query: String, filters: FilterList): Observable<MangasPage> {
+        if (query.startsWith(PREFIX_URL_SEARCH)) {
+            return fetchMangaDetails(
+                SManga.create().apply {
+                    this.url = query.substringAfter(PREFIX_URL_SEARCH)
+                    this.title = ""
+                    this.initialized = false
+                },
+            ).map { MangasPage(listOf(it), false) }
+        }
         return super.fetchSearchManga(page, query, filters)
             .map {
                 val filteredMangas = it.mangas.filter { m -> m.title.contains(query, true) }
@@ -159,7 +168,17 @@ class VizShonenJump : ParsedHttpSource() {
             artist = author
             status = SManga.ONGOING
             description = seriesIntro.select("div.line-solid").firstOrNull()?.text()
-            thumbnail_url = mangaFromList?.thumbnail_url ?: ""
+            thumbnail_url = if (!mangaFromList?.thumbnail_url.isNullOrEmpty()) {
+                mangaFromList!!.thumbnail_url // Can't be null in this branch
+            } else {
+                document.selectFirst("section.section_chapters td a > img")?.attr("data-original") ?: ""
+            }
+            url = mangaUrl
+            title = if (!mangaFromList?.title.isNullOrEmpty()) {
+                mangaFromList!!.title // Can't be null in this branch
+            } else {
+                seriesIntro.selectFirst("h2.type-lg")?.text() ?: ""
+            }
         }
     }
 
@@ -228,55 +247,30 @@ class VizShonenJump : ParsedHttpSource() {
                 .addQueryParameter("device_id", "3")
                 .addQueryParameter("manga_id", mangaId)
                 .addQueryParameter("pages", it.toString())
-                .addEncodedQueryParameter("referer", document.location())
                 .toString()
 
-            Page(it, imageUrl)
+            // The image URL is actually fetched in the interceptor to avoid the short
+            // time expiration it have. Using the interceptor will guarantee the requests
+            // always follow the expected order, even when downloading:
+            // imageUrlRequest -> imageRequest -> decryption
+            // By using the url field of page, while downloading through the app it will
+            // do a batch call to get all imageUrl's first and then starts downloading it,
+            // but this takes time and the imageUrl's will be already expired. The reader
+            // doesn't face this issue as it follows the expected request order.
+            Page(it, imageUrl = imageUrl)
         }
-    }
-
-    override fun imageUrlRequest(page: Page): Request {
-        val url = page.url.toHttpUrlOrNull()!!
-        val referer = url.queryParameter("referer")!!
-        val newUrl = url.newBuilder()
-            .removeAllEncodedQueryParameters("referer")
-            .toString()
-
-        val newHeaders = headersBuilder()
-            .add("Accept", ACCEPT_JSON)
-            .add("X-Client-Login", (loggedIn ?: false).toString())
-            .add("X-Requested-With", "XMLHttpRequest")
-            .set("Referer", referer)
-            .build()
-
-        return GET(newUrl, newHeaders)
-    }
-
-    override fun imageUrlParse(response: Response): String {
-        val referer = response.request.header("Referer")!!
-        val pageUrl = response.parseAs<VizPageUrlDto>()
-            .data?.values?.firstOrNull() ?: throw Exception(FAILED_TO_FETCH_PAGE_URL)
-
-        return pageUrl.toHttpUrl().newBuilder()
-            .addEncodedQueryParameter("referer", referer)
-            .toString()
     }
 
     override fun imageUrlParse(document: Document) = ""
 
     override fun imageRequest(page: Page): Request {
-        val imageUrl = page.imageUrl!!.toHttpUrlOrNull()!!
-        val referer = imageUrl.queryParameter("referer")!!
-        val newImageUrl = imageUrl.newBuilder()
-            .removeAllEncodedQueryParameters("referer")
-            .toString()
-
         val newHeaders = headersBuilder()
-            .add("Accept", "*/*")
-            .set("Referer", referer)
+            .add("Accept", ACCEPT_JSON)
+            .add("X-Client-Login", (loggedIn ?: false).toString())
+            .add("X-Requested-With", "XMLHttpRequest")
             .build()
 
-        return GET(newImageUrl, newHeaders)
+        return GET(page.imageUrl!!, newHeaders)
     }
 
     private fun checkIfIsLoggedIn(chain: Interceptor.Chain? = null) {
@@ -354,8 +348,8 @@ class VizShonenJump : ParsedHttpSource() {
 
     companion object {
         private const val ACCEPT_JSON = "application/json, text/javascript, */*; q=0.01"
-        private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
+        const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"
 
         private val DATE_FORMATTER by lazy {
             SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH)
@@ -364,9 +358,10 @@ class VizShonenJump : ParsedHttpSource() {
         private const val COUNTRY_NOT_SUPPORTED = "Your country is not supported by the service."
         private const val SESSION_EXPIRED = "Your session has expired, please log in through WebView again."
         private const val AUTH_CHECK_FAILED = "Something went wrong in the auth check."
-        private const val FAILED_TO_FETCH_PAGE_URL = "Something went wrong while trying to fetch page."
 
         private const val REFRESH_LOGIN_LINKS_URL = "account/refresh_login_links"
         private const val MANGA_AUTH_CHECK_URL = "manga/auth"
+
+        const val PREFIX_URL_SEARCH = "url:"
     }
 }

@@ -1,6 +1,8 @@
 package eu.kanade.tachiyomi.extension.zh.wnacg
 
+import androidx.preference.PreferenceScreen
 import eu.kanade.tachiyomi.network.GET
+import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.model.Filter
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.Page
@@ -16,11 +18,23 @@ import org.jsoup.nodes.Element
 import rx.Observable
 
 // URL can be found at https://www.wnacglink.top/
-class wnacg : ParsedHttpSource() {
+class wnacg : ParsedHttpSource(), ConfigurableSource {
     override val name = "紳士漫畫"
-    override val baseUrl = "https://www.htcomic.top"
     override val lang = "zh"
     override val supportsLatest = false
+
+    private val preferences = getSharedPreferences(id)
+
+    override val baseUrl = when (System.getenv("CI")) {
+        "true" -> getCiBaseUrl()
+        else -> preferences.baseUrl
+    }
+
+    private val updateUrlInterceptor = UpdateUrlInterceptor(preferences)
+
+    override val client = network.client.newBuilder()
+        .addInterceptor(updateUrlInterceptor)
+        .build()
 
     override fun popularMangaSelector() = ".gallary_item"
     override fun latestUpdatesSelector() = throw Exception("Not used")
@@ -146,4 +160,8 @@ class wnacg : ParsedHttpSource() {
     }
 
     // <<< Filters <<<
+
+    override fun setupPreferenceScreen(screen: PreferenceScreen) {
+        getPreferencesInternal(screen.context, preferences, updateUrlInterceptor.isUpdated).forEach(screen::addPreference)
+    }
 }

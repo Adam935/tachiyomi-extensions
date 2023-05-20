@@ -41,7 +41,7 @@ class Japscan : ConfigurableSource, ParsedHttpSource() {
 
     override val name = "Japscan"
 
-    override val baseUrl = "https://www.japscan.me"
+    override val baseUrl = "https://www.japscan.lol"
 
     override val lang = "fr"
 
@@ -68,6 +68,9 @@ class Japscan : ConfigurableSource, ParsedHttpSource() {
     }
 
     private fun chapterListPref() = preferences.getString(SHOW_SPOILER_CHAPTERS, "hide")
+    
+    override fun headersBuilder() = super.headersBuilder()
+        .add("referer", "$baseUrl/")
 
     // Popular
     override fun popularMangaRequest(page: Int): Request {
