@@ -50,7 +50,6 @@ abstract class ComickFun(
 
     override val client = network.client.newBuilder()
         .addInterceptor(::thumbnailIntercept)
-        .rateLimit(3, 1)
         .build()
 
     /** Popular Manga **/

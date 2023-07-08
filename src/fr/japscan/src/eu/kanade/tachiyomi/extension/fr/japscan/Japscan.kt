@@ -54,7 +54,6 @@ class Japscan : ConfigurableSource, ParsedHttpSource() {
     }
 
     override val client: OkHttpClient = network.cloudflareClient.newBuilder()
-        .rateLimit(1, 2)
         .build()
 
     companion object {

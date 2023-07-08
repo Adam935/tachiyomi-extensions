@@ -40,7 +40,6 @@ class AsuraScansEn : MangaThemesia(
         .addInterceptor(uaIntercept)
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
-        .rateLimit(1, 3, TimeUnit.SECONDS)
         .build()
 
     override val seriesDescriptionSelector = "div.desc p, div.entry-content p, div[itemprop=description]:not(:has(p))"

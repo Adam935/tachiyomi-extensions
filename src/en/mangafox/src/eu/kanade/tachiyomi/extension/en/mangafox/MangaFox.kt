@@ -39,7 +39,6 @@ class MangaFox : ParsedHttpSource() {
     private val json by injectLazy<Json>()
 
     override val client: OkHttpClient = network.cloudflareClient.newBuilder()
-        .rateLimit(1, 1)
         // Force readway=2 cookie to get all page URLs at once
         .cookieJar(
             object : CookieJar {

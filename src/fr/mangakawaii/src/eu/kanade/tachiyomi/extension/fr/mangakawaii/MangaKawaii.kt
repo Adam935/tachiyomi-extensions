@@ -36,7 +36,6 @@ class MangaKawaii : ParsedHttpSource() {
     override val client: OkHttpClient = network.cloudflareClient.newBuilder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
-        .rateLimit(2)
         .build()
 
     private val userAgentRandomizer1 = "${Random.nextInt(9).absoluteValue}"

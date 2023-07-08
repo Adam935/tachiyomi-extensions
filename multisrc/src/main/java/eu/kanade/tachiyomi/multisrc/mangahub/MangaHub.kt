@@ -50,7 +50,6 @@ abstract class MangaHub(
     override val client: OkHttpClient = super.client.newBuilder()
         .addInterceptor(::uaIntercept)
         .addInterceptor(::apiAuthInterceptor)
-        .rateLimit(1)
         .build()
 
     override fun headersBuilder(): Headers.Builder = super.headersBuilder()
