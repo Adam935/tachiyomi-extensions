@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi.extension.en.disasterscans
+package eu.kanade.tachiyomi.extension.en.reaperscans
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
@@ -7,25 +7,25 @@ import android.os.Bundle
 import android.util.Log
 import kotlin.system.exitProcess
 
-class DisasterScansUrlActivity : Activity() {
+class ReaperScansUrlActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val pathSegments = intent?.data?.pathSegments
-        if (pathSegments != null && pathSegments.size > 1) {
-            val slug = pathSegments[1]
+        if (pathSegments != null && pathSegments.size >= 2) {
+            val id = pathSegments[1]
             val mainIntent = Intent().apply {
                 action = "eu.kanade.tachiyomi.SEARCH"
-                putExtra("query", "${DisasterScans.PREFIX_SLUG}$slug")
+                putExtra("query", ReaperScans.PREFIX_ID_SEARCH + id)
                 putExtra("filter", packageName)
             }
 
             try {
                 startActivity(mainIntent)
             } catch (e: ActivityNotFoundException) {
-                Log.e("DisasterScansUrl", e.toString())
+                Log.e("ReaperScansUrlActivity", e.toString())
             }
         } else {
-            Log.e("DisasterScansUrl", "could not parse uri from intent $intent")
+            Log.e("ReaperScansUrlActivity", "could not parse uri from intent $intent")
         }
 
         finish()
