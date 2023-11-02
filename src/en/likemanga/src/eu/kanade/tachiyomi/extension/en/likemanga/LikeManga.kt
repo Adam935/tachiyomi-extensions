@@ -1,7 +1,6 @@
 package eu.kanade.tachiyomi.extension.en.likemanga
 
 import eu.kanade.tachiyomi.network.GET
-import eu.kanade.tachiyomi.network.interceptor.rateLimit
 import eu.kanade.tachiyomi.source.model.Filter
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
@@ -34,7 +33,6 @@ class LikeManga : ParsedHttpSource() {
     override val supportsLatest = true
 
     override val client = network.cloudflareClient.newBuilder()
-        .rateLimit(1, 2)
         .build()
 
     override fun headersBuilder() = super.headersBuilder()
