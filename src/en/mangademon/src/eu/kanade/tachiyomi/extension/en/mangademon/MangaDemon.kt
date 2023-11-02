@@ -2,7 +2,6 @@ package eu.kanade.tachiyomi.extension.en.mangademon
 
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.asObservableSuccess
-import eu.kanade.tachiyomi.network.interceptor.rateLimit
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
@@ -31,7 +30,6 @@ class MangaDemon : ParsedHttpSource() {
     override val baseUrl = "https://manga-demon.org"
 
     override val client = network.cloudflareClient.newBuilder()
-        .rateLimit(1)
         .addInterceptor(::dynamicUrlInterceptor)
         .build()
 

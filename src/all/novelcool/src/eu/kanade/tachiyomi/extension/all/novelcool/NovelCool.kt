@@ -7,7 +7,6 @@ import androidx.preference.SwitchPreferenceCompat
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.POST
 import eu.kanade.tachiyomi.network.asObservableSuccess
-import eu.kanade.tachiyomi.network.interceptor.rateLimit
 import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.model.Filter
 import eu.kanade.tachiyomi.source.model.FilterList
@@ -51,7 +50,6 @@ open class NovelCool(
     private val apiUrl = "https://api.novelcool.com"
 
     override val client = network.cloudflareClient.newBuilder()
-        .rateLimit(1)
         .build()
 
     private val pageClient by lazy {
