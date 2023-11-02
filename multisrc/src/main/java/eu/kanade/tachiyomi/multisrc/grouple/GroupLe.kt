@@ -150,7 +150,7 @@ abstract class GroupLe(
             else -> rawAgeValue
         }
         val manga = SManga.create()
-        manga.title = document.select("h1.names .name").text()
+        manga.title = document.select(".names > .name").text()
         manga.author = infoElement.select("span.elem_author").first()?.text() ?: infoElement.select(
             "span.elem_screenwriter",
         ).first()?.text()
@@ -179,6 +179,7 @@ abstract class GroupLe(
                     "продолжается" -> SManga.ONGOING
                     "начат" -> SManga.ONGOING
                     "переведено" -> SManga.COMPLETED
+                    "завершён" -> SManga.COMPLETED
                     "приостановлен" -> SManga.ON_HIATUS
                     else -> SManga.UNKNOWN
                 }

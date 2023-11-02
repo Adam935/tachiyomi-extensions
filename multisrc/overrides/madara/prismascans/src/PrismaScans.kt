@@ -9,9 +9,9 @@ import java.util.concurrent.TimeUnit
 
 class PrismaScans : Madara(
     "Prisma Scans",
-    "https://prismascans.net",
+    "https://prismacomics.com",
     "pt-BR",
-    SimpleDateFormat("dd 'de' MMMMM 'de' yyyy", Locale("pt", "BR")),
+    SimpleDateFormat("MMMMM dd, yyyy", Locale("pt", "BR")),
 ) {
 
     override val client: OkHttpClient = super.client.newBuilder()

@@ -6,12 +6,12 @@ plugins {
 
 android {
     compileSdk = AndroidConfig.compileSdk
-    namespace = "eu.kanade.tachiyomi.lib.randomua"
 
     defaultConfig {
         minSdk = AndroidConfig.minSdk
-        targetSdk = AndroidConfig.targetSdk
     }
+
+    namespace = "eu.kanade.tachiyomi.lib.randomua"
 }
 
 repositories {

@@ -1,8 +1,14 @@
 package eu.kanade.tachiyomi.extension.all.comickfun
 
+import android.app.Application
+import android.content.SharedPreferences
+import androidx.preference.EditTextPreference
+import androidx.preference.PreferenceScreen
+import androidx.preference.SwitchPreferenceCompat
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.asObservableSuccess
 import eu.kanade.tachiyomi.network.interceptor.rateLimit
+import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
@@ -16,6 +22,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Request
 import okhttp3.Response
 import rx.Observable
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
@@ -24,7 +32,7 @@ import kotlin.math.min
 abstract class ComickFun(
     override val lang: String,
     private val comickFunLang: String,
-) : HttpSource() {
+) : ConfigurableSource, HttpSource() {
 
     override val name = "Comick"
 
@@ -42,6 +50,50 @@ abstract class ComickFun(
     }
 
     private lateinit var searchResponse: List<SearchManga>
+
+    private val preferences: SharedPreferences by lazy {
+        Injekt.get<Application>().getSharedPreferences("source_$id", 0x0000)
+    }
+
+    override fun setupPreferenceScreen(screen: PreferenceScreen) {
+        EditTextPreference(screen.context).apply {
+            key = IGNORED_GROUPS_PREF
+            title = "Ignored Groups"
+            summary =
+                "Chapters from these groups won't be shown.\nOne group name per line (case-insensitive)"
+
+            setOnPreferenceChangeListener { _, newValue ->
+                preferences.edit()
+                    .putString(IGNORED_GROUPS_PREF, newValue.toString())
+                    .commit()
+            }
+        }.also(screen::addPreference)
+
+        SwitchPreferenceCompat(screen.context).apply {
+            key = INCLUDE_MU_TAGS_PREF
+            title = "Include Tags"
+            summaryOn = "More specific, but might contain spoilers!"
+            summaryOff = "Only the broader genres"
+            setDefaultValue(true)
+        }.also(screen::addPreference)
+    }
+
+    private val SharedPreferences.ignoredGroups
+        get() = getString(IGNORED_GROUPS_PREF, "")
+            ?.lowercase()
+            ?.split("\n")
+            ?.map(String::trim)
+            ?.filter(String::isNotEmpty)
+            ?.sorted()
+            .orEmpty()
+            .toSet()
+
+    private val SharedPreferences.includeMuTags
+        get() = getBoolean(INCLUDE_MU_TAGS_PREF, true)
+
+    init {
+        preferences.newLineIgnoredGroups()
+    }
 
     override fun headersBuilder() = Headers.Builder().apply {
         add("Referer", "$baseUrl/")
@@ -76,7 +128,11 @@ abstract class ComickFun(
     override fun latestUpdatesParse(response: Response) = popularMangaParse(response)
 
     /** Manga Search **/
-    override fun fetchSearchManga(page: Int, query: String, filters: FilterList): Observable<MangasPage> {
+    override fun fetchSearchManga(
+        page: Int,
+        query: String,
+        filters: FilterList,
+    ): Observable<MangasPage> {
         return if (query.startsWith(SLUG_SEARCH_PREFIX)) {
             // url deep link
             val slugOrHid = query.substringAfter(SLUG_SEARCH_PREFIX)
@@ -132,6 +188,7 @@ abstract class ComickFun(
                             addQueryParameter("completed", "true")
                         }
                     }
+
                     is GenreFilter -> {
                         it.state.filter { it.isIncluded() }.forEach {
                             addQueryParameter("genres", it.value)
@@ -141,44 +198,53 @@ abstract class ComickFun(
                             addQueryParameter("excludes", it.value)
                         }
                     }
+
                     is DemographicFilter -> {
                         it.state.filter { it.isIncluded() }.forEach {
                             addQueryParameter("demographic", it.value)
                         }
                     }
+
                     is TypeFilter -> {
                         it.state.filter { it.state }.forEach {
                             addQueryParameter("country", it.value)
                         }
                     }
+
                     is SortFilter -> {
                         addQueryParameter("sort", it.getValue())
                     }
+
                     is StatusFilter -> {
                         if (it.state > 0) {
                             addQueryParameter("status", it.getValue())
                         }
                     }
+
                     is CreatedAtFilter -> {
                         if (it.state > 0) {
                             addQueryParameter("time", it.getValue())
                         }
                     }
+
                     is MinimumFilter -> {
                         if (it.state.isNotEmpty()) {
                             addQueryParameter("minimum", it.state)
                         }
                     }
+
                     is FromYearFilter -> {
                         if (it.state.isNotEmpty()) {
                             addQueryParameter("from", it.state)
                         }
                     }
+
                     is ToYearFilter -> {
                         if (it.state.isNotEmpty()) {
                             addQueryParameter("to", it.state)
                         }
                     }
+
                     is TagFilter -> {
                         if (it.state.isNotEmpty()) {
                             it.state.split(",").forEach {
@@ -186,6 +252,7 @@ abstract class ComickFun(
                             }
                         }
                     }
+
                     else -> {}
                 }
             }
@@ -212,7 +279,7 @@ abstract class ComickFun(
 
     override fun mangaDetailsParse(response: Response): SManga {
         val mangaData = response.parseAs<Manga>()
-        return mangaData.toSManga()
+        return mangaData.toSManga(includeMuTags = preferences.includeMuTags)
     }
 
     override fun getMangaUrl(manga: SManga): String {
@@ -262,7 +329,11 @@ abstract class ComickFun(
             page += 1
         }
 
-        return chapterListResponse.chapters.map { it.toSChapter(mangaUrl) }
+        return chapterListResponse.chapters
+            .filter {
+                it.groups.map { g -> g.lowercase() }.intersect(preferences.ignoredGroups).isEmpty()
+            }
+            .map { it.toSChapter(mangaUrl) }
     }
 
     override fun getChapterUrl(chapter: SChapter): String {
@@ -292,16 +363,36 @@ abstract class ComickFun(
 
     override fun getFilterList() = getFilters()
 
+    private fun SharedPreferences.newLineIgnoredGroups() {
+        if (getBoolean(MIGRATED_IGNORED_GROUPS, false)) return
+        val ignoredGroups = getString(IGNORED_GROUPS_PREF, "").orEmpty()
+
+        edit()
+            .putString(
+                IGNORED_GROUPS_PREF,
+                ignoredGroups
+                    .split(",")
+                    .map(String::trim)
+                    .filter(String::isNotEmpty)
+                    .joinToString("\n"),
+            )
+            .putBoolean(MIGRATED_IGNORED_GROUPS, true)
+            .apply()
+    }
+
     companion object {
         const val SLUG_SEARCH_PREFIX = "id:"
+        private const val IGNORED_GROUPS_PREF = "IgnoredGroups"
+        private const val INCLUDE_MU_TAGS_PREF = "IncludeMangaUpdatesTags"
+        private const val MIGRATED_IGNORED_GROUPS = "MigratedIgnoredGroups"
         private const val limit = 20
         val dateFormat by lazy {
             SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ENGLISH).apply {
                 timeZone = TimeZone.getTimeZone("UTC")
             }
         }
-        val markdownLinksRegex = "\\[([^]]+)\\]\\(([^)]+)\\)".toRegex()
-        val markdownItalicBoldRegex = "\\*+\\s*([^\\*]*)\\s*\\*+".toRegex()
+        val markdownLinksRegex = "\\[([^]]+)]\\(([^)]+)\\)".toRegex()
+        val markdownItalicBoldRegex = "\\*+\\s*([^*]*)\\s*\\*+".toRegex()
         val markdownItalicRegex = "_+\\s*([^_]*)\\s*_+".toRegex()
     }
 }

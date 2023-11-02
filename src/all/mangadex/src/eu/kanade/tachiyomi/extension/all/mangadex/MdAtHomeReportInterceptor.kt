@@ -8,9 +8,11 @@ import kotlinx.serialization.json.Json
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Headers
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import uy.kohesive.injekt.injectLazy
@@ -34,8 +36,42 @@ class MdAtHomeReportInterceptor(
             return response
         }
 
+        Log.e("MangaDex", "Connecting to MD@Home node at $url")
+
+        val reportRequest = mdAtHomeReportRequest(response)
+
+        // Execute the report endpoint network call asynchronously to avoid blocking
+        // the reader from showing the image once it's fully loaded if the report call
+        // gets stuck, as it tend to happens sometimes.
+        client.newCall(reportRequest).enqueue(REPORT_CALLBACK)
+
+        if (response.isSuccessful) {
+            return response
+        }
+
+        response.close()
+
+        Log.e("MangaDex", "Error connecting to MD@Home node, fallback to uploads server")
+
+        val imagePath = originalRequest.url.pathSegments
+            .dropWhile { it != "data" && it != "data-saver" }
+            .joinToString("/")
+
+        val fallbackUrl = MDConstants.cdnUrl.toHttpUrl().newBuilder()
+            .addPathSegments(imagePath)
+            .build()
+
+        val fallbackRequest = originalRequest.newBuilder()
+            .url(fallbackUrl)
+            .headers(headers)
+            .build()
+
+        return chain.proceed(fallbackRequest)
+    }
+
+    private fun mdAtHomeReportRequest(response: Response): Request {
         val result = ImageReportDto(
-            url = url,
+            url = response.request.url.toString(),
             success = response.isSuccessful,
             bytes = response.peekBody(Long.MAX_VALUE).bytes().size,
             cached = response.headers["X-Cache"] == "HIT",
@@ -44,18 +80,11 @@ class MdAtHomeReportInterceptor(
 
         val payload = json.encodeToString(result)
 
-        val reportRequest = POST(
+        return POST(
             url = MDConstants.atHomePostUrl,
             headers = headers,
             body = payload.toRequestBody(JSON_MEDIA_TYPE),
         )
-
-        // Execute the report endpoint network call asynchronously to avoid blocking
-        // the reader from showing the image once it's fully loaded if the report call
-        // gets stuck, as it tend to happens sometimes.
-        client.newCall(reportRequest).enqueue(REPORT_CALLBACK)
-
-        return response
     }
 
     companion object {

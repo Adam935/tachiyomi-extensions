@@ -21,6 +21,9 @@ class ReaperScans : HeanCms(
     // Site changed from Madara to HeanCms.
     override val versionId = 2
 
+    override val slugStrategy = SlugStrategy.FETCH_ALL
+    override val useNewQueryEndpoint = true
+
     override val coverPath: String = ""
 
     override val dateFormat: SimpleDateFormat = super.dateFormat.apply {
